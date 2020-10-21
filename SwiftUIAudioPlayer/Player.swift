@@ -61,20 +61,20 @@ class Player {
                 
                 audioPlayerEngine.reset()
                 
-                audioPlayerEngine.attach(audioPlayerNode)
                 
-//                let pitchControl = AVAudioUnitTimePitch()
                 
-                // assign the speed and pitch
-                pitchControl.reset()
-                audioPlayerEngine.attach(pitchControl)
-                
-                audioPlayerEngine.connect(audioPlayerNode, to: pitchControl, format: nil)
-                print(audioPlayerNode)
-                audioPlayerEngine.attach(mixerNode)
-                audioPlayerEngine.connect(pitchControl, to: mixerNode, format: nil)
-                audioPlayerEngine.connect(mixerNode, to: audioPlayerEngine.outputNode, format: nil)
-                
+                let nodes = [
+                    audioPlayerNode,
+                    pitchControl,
+                    mixerNode,
+                ]
+                nodes.forEach { node in
+                    audioPlayerEngine.attach(node)
+                }
+                zip(nodes, (nodes.dropFirst() + [audioPlayerEngine.outputNode]))
+                    .forEach { firstNode, secondNode in
+                        audioPlayerEngine.connect(firstNode, to: secondNode, format: nil)
+                    }
                 
                 scheduleNext(audioPlayFile: audioPlayFile)
 //                audioPlayerNode.scheduleFile(audioPlayFile, at: nil) {
