@@ -9,9 +9,21 @@
 import Foundation
 import SwiftUI
 
+class PlayerSetup: ObservableObject {
+    @Published var volume:Double = 0.00 {
+        didSet {
+            Player.setVolume(volume: Float(self.volume))
+        }
+    }
+    @Published var pitch:Double = 0.0{
+        didSet {
+            Player.setPitch(pitch: Float(self.pitch))
+        }
+    }
+}
+
 struct ContentView: View {
-    @State var volume:Double = 0.00
-    @State var pitch:Double = 0.0
+    @ObservedObject var playerSetup = PlayerSetup()
     @State var musicFiles:[SoundModel] = [SoundModel(file: "metro35", name: "Metronome", fileExtension: "wav"), SoundModel(file: "johnson_tone_down_5min", name: "Johnson", fileExtension: "wav"), SoundModel(file: "sine_140_6s_fade_ogg", name: "Sine wave", fileExtension: "wav")]
     @State var selectedMusicFile:SoundModel = SoundModel(file: "sine_140_6s_fade_ogg", name: "Sine wave", fileExtension: "wav")
     @State var showSoundPicker = false
@@ -21,8 +33,6 @@ struct ContentView: View {
     @State var heart = false
     
     init() {
-        Player.setPitch(pitch: Float(self.pitch))
-        Player.setVolume(volume: Float(self.volume))
     }
     
     var body: some View {
@@ -69,7 +79,7 @@ struct ContentView: View {
                         SwiftUISlider(
                             thumbColor: .green,
                             thumbImage: "musicNote 2",
-                            value: self.$volume
+                            value: $playerSetup.volume
                         ).padding(.horizontal)
                         Button(action: {
                             
@@ -89,7 +99,7 @@ struct ContentView: View {
                             thumbImage: "timerSlider 2",
                             minValue: 0,
                             maxValue: 20,
-                            value: self.$pitch
+                            value: $playerSetup.pitch
                             
                         )
                             .padding(.horizontal)

@@ -16,6 +16,7 @@ class Player {
     private static let speedControl = AVAudioUnitVarispeed()
     private static var pitchControl = AVAudioUnitTimePitch()
     private static var audioPlayerNode = AVAudioPlayerNode()
+    private static var mixerNode = AVAudioMixerNode()
     private static var volume:Float = 1.0
     private static func playSounds(soundfile: String) {
     
@@ -43,7 +44,7 @@ class Player {
                 let audioPlayFile = try AVAudioFile(forReading: URL(fileURLWithPath: path))
                 let audioFileBuffer = AVAudioPCMBuffer(pcmFormat: audioPlayFile.fileFormat, frameCapacity: AVAudioFrameCount(audioPlayFile.length))
                 try? audioPlayFile.read(into: audioFileBuffer!)
-                
+
                 // 2: create the audio player
                 
                 audioPlayerNode = AVAudioPlayerNode()
@@ -54,7 +55,7 @@ class Player {
                 
                 // making sure to clean up the audio hardware to avoid any damage and bugs
                 
-                audioPlayerNode.stop()
+//                audioPlayerNode.stop()
                 
                 audioPlayerEngine.stop()
                 
@@ -62,20 +63,29 @@ class Player {
                 
                 audioPlayerEngine.attach(audioPlayerNode)
                 
-                let pitchControl = AVAudioUnitTimePitch()
+//                let pitchControl = AVAudioUnitTimePitch()
                 
                 // assign the speed and pitch
-                
+                pitchControl.reset()
                 audioPlayerEngine.attach(pitchControl)
                 
                 audioPlayerEngine.connect(audioPlayerNode, to: pitchControl, format: nil)
+                print(audioPlayerNode)
+                audioPlayerEngine.attach(mixerNode)
+                audioPlayerEngine.connect(pitchControl, to: mixerNode, format: nil)
+                audioPlayerEngine.connect(mixerNode, to: audioPlayerEngine.outputNode, format: nil)
                 
-                audioPlayerEngine.connect(pitchControl, to: audioPlayerEngine.outputNode, format: nil)
                 
-                audioPlayerNode.scheduleFile(audioPlayFile, at: nil, completionHandler: nil)
+                scheduleNext(audioPlayFile: audioPlayFile)
+//                audioPlayerNode.scheduleFile(audioPlayFile, at: nil) {
+//                    DispatchQueue.main.async {
+//
+//                    playMusic(musicfile: musicfile, fileExtension: fileExtension)
+//                    }
+//                }
                 
                 // try to start playing the audio
-                audioPlayerNode.scheduleBuffer(audioFileBuffer!, at: nil, options: .loops, completionHandler: nil)
+//                audioPlayerNode.scheduleBuffer(audioFileBuffer!, at: nil, options: .loops, completionHandler: nil)
                 do {
                     try audioPlayerEngine.start()
                 } catch {
@@ -88,10 +98,18 @@ class Player {
                 
                 audioPlayerNode.play()
             }catch {
-                print("Error")
+                print("Error \(error)")
             }
         }
     }
+    
+static func scheduleNext(audioPlayFile: AVAudioFile) {
+    audioPlayerNode.scheduleFile(audioPlayFile, at: nil) {
+        DispatchQueue.main.async {
+            scheduleNext(audioPlayFile: audioPlayFile)
+        }
+    }
+}
     static func breathIn() {
 //            Player.playSounds(soundfile: "breathin")
     }
@@ -117,6 +135,6 @@ class Player {
     }
     
     static func setVolume(volume:Float) {
-        audioPlayerNode.volume = volume
+        mixerNode.outputVolume = volume
     }
 }
