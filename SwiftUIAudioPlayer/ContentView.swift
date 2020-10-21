@@ -12,17 +12,20 @@ import SwiftUI
 struct ContentView: View {
     @State var volume:Double = 0.00
     @State var pitch:Double = 0.0
-    @State var musicFiles:[SoundModel] = [SoundModel(file: "metro35", name: "Metronome", fileExtension: "wav"), SoundModel(file: "johnson_tone_down_5min", name: "Johnson", fileExtension: "wav"), SoundModel(file: "sine_140_6s_fade_ogg", name: "Sine wave", fileExtension: "wav")]
-    @State var selectedMusicFile:SoundModel = SoundModel(file: "sine_140_6s_fade_ogg", name: "Sine wave", fileExtension: "wav")
+    @State var musicFiles:[SoundModel] = [SoundModel(file: "metro35", name: "Metronome", fileExtension: "wav"), SoundModel(file: "johnson_tone_down_5min", name: "Johnson", fileExtension: "wav"), SoundModel(file: "sine_140_6s_fade_ogg", name: "Sine mp3e", fileExtension: "mp3")]
+    @State var selectedMusicFile:SoundModel = SoundModel(file: "sine_140_6s_fade_ogg", name: "Sine mp3e", fileExtension: "mp3")
     @State var showSoundPicker = false
     @State var selectedGraph = "skin_conductance"
     @State var iconSize:CGFloat = 0.124
     @State var iconSpace:CGFloat = 0.015
     @State var heart = false
+    @State var  minimumValue:Float = -2400.0
+    @State var maximumValue:Float = 2400.0
+    var player:Player = Player()
     
     init() {
-        Player.setPitch(pitch: Float(self.pitch))
-        Player.setVolume(volume: Float(self.volume))
+        player.setPitch(pitch: Float(self.pitch))
+        player.setVolume(volume: Float(self.volume))
     }
     
     var body: some View {
@@ -34,11 +37,11 @@ struct ContentView: View {
                         self.selectedGraph = "heart"
                         if(self.heart)
                         {
-                            Player.playMusic(musicfile: self.selectedMusicFile.file, fileExtension: self.selectedMusicFile.fileExtension)
+                            self.player.playMusic(musicfile: self.selectedMusicFile.file, fileExtension: self.selectedMusicFile.fileExtension)
                         }
                         else
                         {
-                            Player.stopMusic()
+                            self.player.stopMusic()
                             self.selectedGraph = ""
                         }
                     })
@@ -69,7 +72,9 @@ struct ContentView: View {
                         SwiftUISlider(
                             thumbColor: .green,
                             thumbImage: "musicNote 2",
-                            value: self.$volume
+                            value: self.$volume.didSet(execute: { (value) in
+                                self.player.setVolume(volume: Float(value))
+                            })
                         ).padding(.horizontal)
                         Button(action: {
                             
@@ -87,9 +92,11 @@ struct ContentView: View {
                             thumbColor: .green,
                             
                             thumbImage: "timerSlider 2",
-                            minValue: 0,
-                            maxValue: 20,
-                            value: self.$pitch
+                            minValue: self.minimumValue,
+                            maxValue: self.maximumValue,
+                            value: self.$pitch.didSet(execute: { (value) in
+                                self.player.setPitch(pitch: Float(value))
+                            })
                             
                         )
                             .padding(.horizontal)
@@ -182,5 +189,25 @@ struct ChooseSoundView: View {
                 .background(Color.white)
             }
         }
+    }
+}
+
+
+extension Binding {
+    /// Execute block when value is changed.
+    ///
+    /// Example:
+    ///
+    ///     Slider(value: $amount.didSet { print($0) }, in: 0...10)
+    func didSet(execute: @escaping (Value) ->Void) -> Binding {
+        return Binding(
+            get: {
+                return self.wrappedValue
+        },
+            set: {
+                self.wrappedValue = $0
+                execute($0)
+        }
+        )
     }
 }
